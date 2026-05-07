@@ -1,6 +1,7 @@
 import { generateText } from 'ai';
 import { createDeepSeek } from '@ai-sdk/deepseek';
 import inquirer from 'inquirer';
+import { tracerProvider } from "./instrumentation"
 
 if (!process.env.DEEPSEEK_API_KEY) {
   console.error('❌ 缺少 DEEPSEEK_API_KEY 环境变量');
@@ -14,6 +15,9 @@ const deepseek = createDeepSeek({
 // 历史消息
 const history: { role: 'user' | 'assistant'; content: string }[] = [];
 
+// Generate a session ID to group all turns of this conversation in Langfuse
+const sessionId = crypto.randomUUID();
+
 async function chat() {
   const { prompt } = await inquirer.prompt([
     {
@@ -26,6 +30,7 @@ async function chat() {
 
   if (prompt.toLowerCase() === 'q' || prompt.toLowerCase() === 'quit' || prompt.toLowerCase() === 'exit') {
     console.log('\n👋 再见！');
+    tracerProvider.shutdown()
     process.exit(0);
   }
 
@@ -37,6 +42,13 @@ async function chat() {
   const { text } = await generateText({
     model: deepseek('deepseek-v4-flash'),
     messages: history,
+    experimental_telemetry: {
+      isEnabled: true,
+      functionId: 'chat-response',
+      metadata: {
+        sessionId,
+      },
+    },
   });
 
   // 添加 AI 响应
@@ -47,5 +59,6 @@ async function chat() {
   chat();
 }
 
+console.log("Session ID:" + sessionId)
 console.log('🎯 AI 对话助手 (输入 q 退出)\n');
 chat();

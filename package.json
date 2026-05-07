@@ -15,7 +15,9 @@
   },
   "dependencies": {
     "@ai-sdk/deepseek": "^2.0.33",
+    "@opentelemetry/sdk-node": "^0.217.0",
     "ai": "^6.0.175",
-    "inquirer": "^13.4.2"
+    "inquirer": "^13.4.2",
+    "langfuse-vercel": "^3.38.20"
   }
 }
