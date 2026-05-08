@@ -2,6 +2,7 @@ import { generateText } from 'ai';
 import { createDeepSeek } from '@ai-sdk/deepseek';
 import inquirer from 'inquirer';
 import { tracerProvider } from "./instrumentation"
+import { customerServicePrompt } from './setUpLangfuseClient'
 
 if (!process.env.DEEPSEEK_API_KEY) {
   console.error('❌ 缺少 DEEPSEEK_API_KEY 环境变量');
@@ -42,6 +43,7 @@ async function chat() {
   const { text } = await generateText({
     model: deepseek('deepseek-v4-flash'),
     messages: history,
+    system: customerServicePrompt,
     experimental_telemetry: {
       isEnabled: true,
       functionId: 'chat-response',
