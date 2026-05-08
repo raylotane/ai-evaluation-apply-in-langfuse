@@ -37,8 +37,8 @@ ${r.item}`)
     .join('\n\n---\n\n');
 }
 
-/** 收集用户对 AI 回答的反馈（赞/踩），返回 traceId */
-async function collectUserFeedback(): Promise<string | null> {
+/** 收集用户对 AI 回答的反馈（赞/踩）*/
+async function collectUserFeedback(messageId: string) {
   const { feedback } = await inquirer.prompt([
     {
       type: 'select',
@@ -53,11 +53,10 @@ async function collectUserFeedback(): Promise<string | null> {
 
   if (feedback === 'skip') return null;
 
-  return tracer.startActiveSpan('user-feedback', async (span) => {
-    const traceId = span.spanContext().traceId;
+  tracer.startActiveSpan('user-feedback', async (span) => {
     try {
       await langfuse.score.create({
-        traceId,
+        traceId: messageId,
         name: 'user-feedback',
         value: feedback === 'thumbs_up' ? 1 : 0,
         dataType: 'BOOLEAN',
@@ -67,12 +66,12 @@ async function collectUserFeedback(): Promise<string | null> {
       console.error('⚠️ 用户反馈保存失败:', (e as Error).message);
     }
     span.end();
-    return traceId;
+    // return traceId;
   });
 }
 
 /** AI 裁判：自动评估本轮回答质量 */
-async function runAiJudge(traceId: string, prompt: string, text: string, context: string) {
+async function runAiJudge(messageId: string, prompt: string, text: string, context: string) {
   const judgeSystem = `你是 AI 回答质量评估员。请从以下三个维度对 AI 的回答进行评分，并给出总结。
 
 评分标准（每项 1-10 分）：
@@ -98,17 +97,17 @@ async function runAiJudge(traceId: string, prompt: string, text: string, context
         model: deepseek('deepseek-v4-flash'),
         system: judgeSystem,
         messages: judgeMessages,
-        experimental_telemetry: { isEnabled: true, functionId: 'ai-judge', metadata: { sessionId } },
+        experimental_telemetry: { isEnabled: true, functionId: 'ai-judge', metadata: { sessionId, messageId } },
       });
 
       const scores = JSON.parse(evaluation);
       await Promise.all([
-        langfuse.score.create({ traceId, name: 'helpfulness', value: scores.helpfulness, dataType: 'NUMERIC' }),
-        langfuse.score.create({ traceId, name: 'accuracy', value: scores.accuracy, dataType: 'NUMERIC' }),
-        langfuse.score.create({ traceId, name: 'relevance', value: scores.relevance, dataType: 'NUMERIC' }),
-        langfuse.score.create({ traceId, name: 'judge-summary', value: scores.summary, dataType: 'TEXT' }),
+        langfuse.score.create({ traceId: messageId, name: 'helpfulness', value: scores.helpfulness, dataType: 'NUMERIC' }),
+        langfuse.score.create({ traceId: messageId, name: 'accuracy', value: scores.accuracy, dataType: 'NUMERIC' }),
+        langfuse.score.create({ traceId: messageId, name: 'relevance', value: scores.relevance, dataType: 'NUMERIC' }),
+        langfuse.score.create({ traceId: messageId, name: 'judge-summary', value: scores.summary, dataType: 'TEXT' }),
       ]);
-      console.log('✅ AI 自动评分完成\n');
+      // console.log('✅ AI 自动评分完成\n');
     } catch (e) {
       console.error('⚠️ AI 评分解析失败:', (e as Error).message);
     }
@@ -131,6 +130,7 @@ async function chat() {
     tracerProvider.shutdown()
     process.exit(0);
   }
+  const messageId = crypto.randomUUID();
 
   // 检索相关知识
   const context = buildSearchContext(prompt);
@@ -154,6 +154,7 @@ async function chat() {
       functionId: 'chat-response',
       metadata: {
         sessionId,
+        messageId,
       },
     },
   });
@@ -164,12 +165,10 @@ async function chat() {
   console.log('🤖 AI：', text, '\n');
 
   // 用户反馈：对本次回答打分
-  const traceId = await collectUserFeedback();
+  await collectUserFeedback(messageId);
 
-  // AI 裁判：自动评估本轮回答质量（和用户反馈共享同一个 traceId）
-  if (traceId) {
-    runAiJudge(traceId, prompt, text, context);
-  }
+  // AI 裁判：自动评估本轮回答质量
+  await runAiJudge(messageId, prompt, text, context);
 
   chat();
 }
