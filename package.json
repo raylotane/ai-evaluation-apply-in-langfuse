@@ -19,6 +19,7 @@
     "@langfuse/otel": "^5.3.0",
     "@opentelemetry/sdk-node": "^0.217.0",
     "ai": "^6.0.175",
+    "fuse.js": "^6.1.0",
     "inquirer": "^13.4.2",
     "langfuse-vercel": "^3.38.20"
   }
