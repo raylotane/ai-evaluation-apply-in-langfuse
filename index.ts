@@ -4,6 +4,11 @@ import inquirer from 'inquirer';
 import { tracerProvider } from "./instrumentation"
 import { customerServicePrompt } from './setUpLangfuseClient'
 import { fuseSearch } from './rag/search';
+import { trace } from '@opentelemetry/api';
+import { LangfuseClient } from "@langfuse/client";
+
+const tracer = trace.getTracer('rag');
+const langfuse = new LangfuseClient();
 
 if (!process.env.DEEPSEEK_API_KEY) {
   console.error('❌ 缺少 DEEPSEEK_API_KEY 环境变量');
@@ -78,6 +83,47 @@ async function chat() {
   history.push({ role: 'assistant', content: text });
 
   console.log('🤖 AI：', text, '\n');
+
+  // AI 裁判：自动评估本轮回答质量
+  tracer.startActiveSpan('ai-judge', async (judgeSpan) => {
+    const traceId = judgeSpan.spanContext().traceId;
+    const judgeSystem = `你是一个AI对话质量评估员。请评估 AI 的回答质量，仅返回 JSON。
+
+评分维度（1-5分）：
+- helpfulness: 对用户有帮助吗？
+- accuracy: 准确吗？（是否基于提供的上下文，有无幻觉）
+- relevance: 回答与问题相关吗？
+
+{"helpfulness": 4, "accuracy": 5, "relevance": 5, "summary": "一句话评价"}`;
+
+    const { text: evaluation } = await generateText({
+      model: deepseek('deepseek-v4-flash'),
+      system: judgeSystem,
+      messages: [
+        { role: 'user', content: `用户问题：${prompt}\n\nAI回答：${text}${context ? `\n\n参考资料：${context}` : ''}` }
+      ],
+      experimental_telemetry: {
+        isEnabled: true,
+        functionId: 'ai-judge',
+        metadata: { sessionId },
+      },
+    });
+
+    try {
+      const scores = JSON.parse(evaluation);
+      await Promise.all([
+        langfuse.score.create({ traceId, name: 'helpfulness', value: scores.helpfulness, dataType: 'NUMERIC' }),
+        langfuse.score.create({ traceId, name: 'accuracy', value: scores.accuracy, dataType: 'NUMERIC' }),
+        langfuse.score.create({ traceId, name: 'relevance', value: scores.relevance, dataType: 'NUMERIC' }),
+        langfuse.score.create({ traceId, name: 'judge-summary', value: scores.summary, dataType: 'TEXT' }),
+      ]);
+      // console.log(`📊 AI 评分: helpfulness=${scores.helpfulness} accuracy=${scores.accuracy} relevance=${scores.relevance}`);
+    } catch (e) {
+      console.error('⚠️ AI 评分解析失败:', (e as Error).message);
+    }
+
+    judgeSpan.end();
+  });
 
   chat();
 }
