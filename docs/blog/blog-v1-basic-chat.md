@@ -180,7 +180,7 @@ Session ID:df7a8875-efea-4ecc-8564-ebeb28bbf4df
 
 🤖 AI： 您好！我是您的咖啡品牌智能助手，名字叫Alice。有什么可以帮助您的吗？☕️ 
 ```
-![alt text](./image.png)
+![alt text](./images/image.png)
 
 ### Langfuse Dashboard 能看到什么
 
