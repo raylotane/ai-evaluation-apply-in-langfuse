@@ -18,7 +18,7 @@
 2. **可观测性**：请求发出去了，能不能看到它走了多久、消耗了多少 token？
 3. **Prompt 管理**：Prompt 改动了不想重新发版，能不能远程托管？
 
-本篇文章（[v1.0.0](https://github.com/your-repo/ai-evaluation-apply-in-langfuse/releases/tag/v1.0.0)）来实现这三个目标。
+本篇文章（[v1.0.0](https://github.com/raylotane/ai-evaluation-apply-in-langfuse/releases/tag/v1.0.0)）来实现这三个目标。
 
 ### 技术方案
 
@@ -203,5 +203,5 @@ v1 完成了最基础但最重要的三件事：
 
 **下一步预告**：v2 将引入 **RAG 知识库**，让 AI 能基于文档回答问题，同时在 Langfuse 中追踪检索链路。
 
-> 项目地址：https://github.com/your-repo/ai-evaluation-apply-in-langfuse
-> 版本标签：[v1.0.0](https://github.com/your-repo/ai-evaluation-apply-in-langfuse/releases/tag/v1.0.0)
+> 项目地址：https://github.com/raylotane/ai-evaluation-apply-in-langfuse
+> 版本标签：[v1.0.0](https://github.com/raylotane/ai-evaluation-apply-in-langfuse/releases/tag/v1.0.0)

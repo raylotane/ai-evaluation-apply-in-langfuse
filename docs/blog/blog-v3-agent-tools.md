@@ -354,5 +354,5 @@ v3 在 v2 的 RAG + 评估体系基础上，完成了两个关键升级：
 
 **下一步预告**：v4 将探索 **Prompt 评测与回归测试**——当 Prompt 迭代时，如何保证新旧版本的回退质量？如何自动化地验证工具调用的正确性？敬请期待。
 
-> 项目地址：https://github.com/your-repo/ai-evaluation-apply-in-langfuse
-> 版本标签：[v3.0.0](https://github.com/your-repo/ai-evaluation-apply-in-langfuse/releases/tag/v3.0.0)
+> 项目地址：https://github.com/raylotane/ai-evaluation-apply-in-langfuse
+> 版本标签：[v3.0.0](https://github.com/raylotane/ai-evaluation-apply-in-langfuse/releases/tag/v3.0.0)

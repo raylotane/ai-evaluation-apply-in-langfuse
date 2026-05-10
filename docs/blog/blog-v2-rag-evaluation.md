@@ -361,5 +361,5 @@ v2 在 v1 的基础上做了两件核心的事：
 
 **下一步预告**：v3 将探索 **Prompt 评测与回归测试**——当 Prompt 迭代时，如何保证新旧版本的回退质量？敬请期待。
 
-> 项目地址：https://github.com/your-repo/ai-evaluation-apply-in-langfuse
-> 版本标签：[v2.0.0](https://github.com/your-repo/ai-evaluation-apply-in-langfuse/releases/tag/v2.0.0)
+> 项目地址：https://github.com/raylotane/ai-evaluation-apply-in-langfuse
+> 版本标签：[v2.0.0](https://github.com/raylotane/ai-evaluation-apply-in-langfuse/releases/tag/v2.0.0)
