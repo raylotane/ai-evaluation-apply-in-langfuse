@@ -1,10 +1,19 @@
-import { generateText } from 'ai';
+import { ToolLoopAgent } from 'ai';
 import { createDeepSeek } from '@ai-sdk/deepseek';
 import inquirer from 'inquirer';
-import { tracerProvider } from "./instrumentation"
+import { langfuseSpanProcessor, tracerProvider } from "./instrumentation"
 import { customerServicePrompt } from './setUpLangfuseClient'
 import { buildSearchContext } from './rag/search';
 import { collectUserFeedback, runAiJudge } from './scoring';
+import { queryMenuTool, weatherTool } from './tools/menu';
+import { trace } from "@opentelemetry/api";
+
+import {
+  observe,
+  propagateAttributes,
+  updateActiveObservation,
+} from "@langfuse/tracing";
+
 
 if (!process.env.DEEPSEEK_API_KEY) {
   console.error('❌ 缺少 DEEPSEEK_API_KEY 环境变量');
@@ -14,6 +23,26 @@ if (!process.env.DEEPSEEK_API_KEY) {
 const deepseek = createDeepSeek({
   apiKey: process.env.DEEPSEEK_API_KEY,
 });
+
+const agent = new ToolLoopAgent({
+  model: deepseek('deepseek-v4-flash'),
+  instructions: customerServicePrompt,
+  tools: {
+    queryMenu: queryMenuTool,
+    weather: weatherTool,
+  },
+  experimental_telemetry: {
+    isEnabled: true,
+  },
+  onFinish: async (result) => {
+    // Update trace with final output after stream completes
+    updateActiveObservation({
+      output: result.content,
+    });
+    // End span manually after stream has finished
+    trace.getActiveSpan()?.end();
+  },
+})
 
 // 历史消息
 const history: { role: 'user' | 'assistant'; content: string }[] = [];
@@ -47,24 +76,29 @@ async function chat() {
     ? `请基于以下参考资料回答问题：\n\n${context}\n\n---\n\n问题：${prompt}`
     : prompt;
 
+  updateActiveObservation({
+    input: userContent,
+  });
+
   // 添加用户消息
   history.push({ role: 'user', content: userContent });
 
   console.log('\n⏳ 思考中...\n');
 
-  const { text } = await generateText({
-    model: deepseek('deepseek-v4-flash'),
-    messages: history,
-    system: customerServicePrompt,
-    experimental_telemetry: {
-      isEnabled: true,
-      functionId: 'chat-response',
-      metadata: {
-        sessionId,
-        messageId,
-      },
+  const { text } = await propagateAttributes(
+    {
+      // traceName: "chat-message",
+      sessionId,  // Groups related messages together
     },
-  });
+    async () => {
+      const result = await agent.generate({
+        messages: history,
+      });
+
+
+      return result
+    }
+  );
 
   // 添加 AI 响应
   history.push({ role: 'assistant', content: text });
@@ -77,9 +111,16 @@ async function chat() {
   // AI 裁判：自动评估本轮回答质量
   await runAiJudge(messageId, prompt, text, context, sessionId);
 
-  chat();
+  chatWithTrace()
 }
+
+
+const chatWithTrace = observe(chat, {
+  name: "handle-chat-message",
+  endOnExit: false, // Don't end observation until stream finishes
+});
+
 
 console.log("Session ID:" + sessionId)
 console.log('🎯 AI 对话助手 (输入 q 退出)\n');
-chat();
+chatWithTrace();
