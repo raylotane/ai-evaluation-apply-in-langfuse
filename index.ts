@@ -111,7 +111,7 @@ async function chat() {
 
 
   // 用户反馈：对本次回答打分
-  await collectUserFeedback(messageId);
+  await collectUserFeedback(messageId, sessionId);
 
   // AI 裁判：自动评估本轮回答质量
   await runAiJudge(messageId, prompt, text, context, sessionId);

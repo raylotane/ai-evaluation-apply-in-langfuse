@@ -11,7 +11,7 @@ const deepseek = createDeepSeek({
 });
 
 /** 收集用户对 AI 回答的反馈（赞/踩）*/
-export async function collectUserFeedback(messageId: string) {
+export async function collectUserFeedback(messageId: string, sessionId: string) {
   const { feedback } = await inquirer.prompt([
     {
       type: 'select',
@@ -33,6 +33,7 @@ export async function collectUserFeedback(messageId: string) {
         name: 'user-feedback',
         value: feedback === 'thumbs_up' ? 1 : 0,
         dataType: 'BOOLEAN',
+        metadata: { sessionId }
       });
       // console.log(`✅ 用户反馈已记录: ${feedback === 'thumbs_up' ? '👍 满意' : '👎 不满意'}`);
     } catch (e) {
