@@ -1,5 +1,5 @@
 {
-  "name": "ai-evaluation-apply-in-langfuse",
+  "name": "nowwa-coffee-assistant",
   "module": "index.ts",
   "type": "module",
   "private": true,
