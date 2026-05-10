@@ -21,6 +21,7 @@
     "ai": "^6.0.175",
     "fuse.js": "^6.1.0",
     "inquirer": "^13.4.2",
-    "langfuse-vercel": "^3.38.20"
+    "langfuse-vercel": "^3.38.20",
+    "ora": "^9.4.0"
   }
 }

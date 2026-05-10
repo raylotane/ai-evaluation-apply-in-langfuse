@@ -1,6 +1,7 @@
 import { ToolLoopAgent } from 'ai';
 import { createDeepSeek } from '@ai-sdk/deepseek';
 import inquirer from 'inquirer';
+import ora from 'ora';
 import { langfuseSpanProcessor, tracerProvider } from "./instrumentation"
 import { customerServicePrompt } from './setUpLangfuseClient'
 import { buildSearchContext } from './rag/search';
@@ -83,7 +84,7 @@ async function chat() {
   // 添加用户消息
   history.push({ role: 'user', content: userContent });
 
-  console.log('\n⏳ 思考中...\n');
+  const spinner = ora('🤔 思考中...').start();
 
   const { text } = await propagateAttributes(
     {
@@ -100,10 +101,13 @@ async function chat() {
     }
   );
 
-  // 添加 AI 响应
+
   history.push({ role: 'assistant', content: text });
 
-  console.log('🤖 AI：', text, '\n');
+  const conversation = `🤖 AI：${text} \n`
+
+  spinner.succeed(conversation);
+
 
   // 用户反馈：对本次回答打分
   await collectUserFeedback(messageId);
