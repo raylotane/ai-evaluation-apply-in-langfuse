@@ -6,7 +6,7 @@ import { langfuseSpanProcessor, tracerProvider } from "./instrumentation"
 import { customerServicePrompt } from './setUpLangfuseClient'
 import { buildSearchContext } from './rag/search';
 import { collectUserFeedback, runAiJudge } from './scoring';
-import { queryMenuTool, weatherTool } from './tools/menu';
+import { queryMenuTool, weatherTool, getTimeTool } from './tools/menu';
 import { trace } from "@opentelemetry/api";
 
 import {
@@ -31,6 +31,7 @@ const agent = new ToolLoopAgent({
   tools: {
     queryMenu: queryMenuTool,
     weather: weatherTool,
+    getTime: getTimeTool,
   },
   experimental_telemetry: {
     isEnabled: true,

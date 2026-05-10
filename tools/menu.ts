@@ -50,3 +50,24 @@ export const weatherTool = tool({
     description: 'Sunny',
   }),
 });
+
+export const getTimeTool = tool({
+  description: '获取当前日期和时间',
+  inputSchema: z.object({}),
+  execute: async () => {
+    const now = new Date();
+    return {
+      datetime: now.toISOString(),
+      formatted: now.toLocaleString('zh-CN', {
+        timeZone: 'Asia/Shanghai',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+      }),
+      timezone: 'Asia/Shanghai',
+    };
+  },
+});
